@@ -1,0 +1,35 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Instagram Post Scheduler{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'scheduler_app/styles.css' %}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand-block">
+      <a class="brand" href="{% url 'scheduler_app:dashboard' %}">Instagram Scheduler</a>
+      <span class="brand-subtitle">Local publishing queue</span>
+    </div>
+    <div class="scheduler-pill {% if scheduler.running %}is-running{% endif %}">
+      <span class="dot"></span>
+      <span>{% if scheduler.running %}Running{% else %}Stopped{% endif %}</span>
+      <strong>{{ scheduler.jobs }} queued</strong>
+    </div>
+  </header>
+
+  <main class="page">
+    {% if messages %}
+      <div class="messages">
+        {% for message in messages %}
+          <div class="message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

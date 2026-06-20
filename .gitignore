@@ -203,6 +203,13 @@ cython_debug/
 # Temporary file for partial code execution
 tempCodeRunnerFile.py
 
+# Project runtime files
+schedulebot.db
+schedulebot.db-*
+.instagram_session.json
+logs/
+media/
+
 # Ruff stuff:
 .ruff_cache/
 

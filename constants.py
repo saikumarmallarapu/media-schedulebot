@@ -1,14 +1,16 @@
 STATUS_PENDING = "pending"
 STATUS_PUBLISHED = "published"
 STATUS_FAILED = "failed"
+STATUS_CANCELLED = "cancelled"
 
-VALID_STATUSES = frozenset(
-    {
-        STATUS_PENDING,
-        STATUS_PUBLISHED,
-        STATUS_FAILED,
-    }
+STATUS_VALUES = (
+    STATUS_PENDING,
+    STATUS_PUBLISHED,
+    STATUS_FAILED,
+    STATUS_CANCELLED,
 )
+
+VALID_STATUSES = frozenset(STATUS_VALUES)
 
 MEDIA_TYPE_IMAGE = "image"
 MEDIA_TYPE_VIDEO = "video"

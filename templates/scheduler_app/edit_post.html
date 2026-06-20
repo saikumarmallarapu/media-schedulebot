@@ -1,0 +1,61 @@
+{% extends "scheduler_app/base.html" %}
+
+{% block title %}Edit Post - Instagram Scheduler{% endblock %}
+
+{% block content %}
+  <section class="edit-shell">
+    <form class="panel form-panel edit-panel" method="post" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="title-row">
+        <div>
+          <h1>Edit Post #{{ post.id }}</h1>
+          <p>{{ post.get_status_display }} post</p>
+        </div>
+        <a class="button" href="{% url 'scheduler_app:dashboard' %}">Back</a>
+      </div>
+
+      {% if form.non_field_errors %}
+        <div class="field-errors">{{ form.non_field_errors }}</div>
+      {% endif %}
+
+      <dl class="meta-list">
+        <div>
+          <dt>Status</dt>
+          <dd>{{ post.get_status_display }}</dd>
+        </div>
+        <div>
+          <dt>Current Media</dt>
+          <dd title="{{ post.media_path }}">{{ post.media_filename }}</dd>
+        </div>
+      </dl>
+
+      <label>
+        <span>Replace Media</span>
+        {{ form.media_file }}
+        {{ form.media_file.errors }}
+      </label>
+
+      <div class="form-row">
+        <label>
+          <span>Type</span>
+          {{ form.media_type }}
+          {{ form.media_type.errors }}
+        </label>
+
+        <label>
+          <span>Schedule</span>
+          {{ form.scheduled_time }}
+          {{ form.scheduled_time.errors }}
+        </label>
+      </div>
+
+      <label>
+        <span>Caption</span>
+        {{ form.caption }}
+        {{ form.caption.errors }}
+      </label>
+
+      <button type="submit" class="button primary full">Save Changes</button>
+    </form>
+  </section>
+{% endblock %}

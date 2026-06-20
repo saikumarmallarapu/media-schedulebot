@@ -1,4 +1,5 @@
+Django>=4.2,<5.0
+APScheduler>=3.10.4,<4.0.0
 playwright>=1.44.0
 python-dotenv>=1.0.1
-apscheduler>=3.10.4,<4.0.0
 tzdata>=2024.1

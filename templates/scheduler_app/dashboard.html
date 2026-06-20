@@ -1,0 +1,243 @@
+{% extends "scheduler_app/base.html" %}
+
+{% block title %}Dashboard - Instagram Scheduler{% endblock %}
+
+{% block content %}
+  {% if config_warnings %}
+    <section class="notice warning">
+      {% for warning in config_warnings %}
+        <p>{{ warning }}</p>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  <section class="status-strip" aria-label="Scheduler summary">
+    <article class="metric-card instagram-card">
+      <span class="metric-label">Instagram</span>
+      <strong>{{ instagram.status_label }}</strong>
+      <small>{{ instagram.username_label }}</small>
+    </article>
+    <article class="metric-card scheduler-card">
+      <span class="metric-label">Scheduler</span>
+      <strong>{% if scheduler.running %}Running{% else %}Stopped{% endif %}</strong>
+      <small>{{ scheduler.jobs }} queued</small>
+    </article>
+    <article class="metric-card queue-card">
+      <span class="metric-label">Pending Queue</span>
+      <strong>{{ pending_count }}</strong>
+      <small>waiting to publish</small>
+    </article>
+    <article class="metric-card failed-card {% if failed_count %}has-alert{% endif %}">
+      <span class="metric-label">Failed</span>
+      <strong>{{ failed_count }}</strong>
+      <small>needs attention</small>
+    </article>
+  </section>
+
+  <section class="dashboard-grid">
+    <aside class="control-stack">
+      <form class="panel form-panel" method="post" action="{% url 'scheduler_app:create_post' %}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="panel-heading">
+          <div>
+            <h1>Schedule Post</h1>
+            <p>Image or video</p>
+          </div>
+        </div>
+
+        {% if form.non_field_errors %}
+          <div class="field-errors">{{ form.non_field_errors }}</div>
+        {% endif %}
+
+        <label>
+          <span>Media File</span>
+          {{ form.media_file }}
+          {{ form.media_file.errors }}
+        </label>
+
+        <div class="form-row">
+          <label>
+            <span>Post Type</span>
+            {{ form.media_type }}
+            {{ form.media_type.errors }}
+          </label>
+
+          <label>
+            <span>Publish Time</span>
+            {{ form.scheduled_time }}
+            {{ form.scheduled_time.errors }}
+          </label>
+        </div>
+
+        <label>
+          <span>Caption</span>
+          {{ form.caption }}
+          {{ form.caption.errors }}
+        </label>
+
+        <button type="submit" class="button primary full">Save Scheduled Post</button>
+      </form>
+
+      <section class="panel status-panel">
+        <div class="panel-heading">
+          <div>
+            <h1>Instagram</h1>
+            <p>Connection</p>
+          </div>
+          <span class="status {{ instagram.status_class }}">{{ instagram.status_label }}</span>
+        </div>
+
+        <dl class="status-list">
+          <div>
+            <dt>Username</dt>
+            <dd>{{ instagram.username_label }}</dd>
+          </div>
+          <div>
+            <dt>Password</dt>
+            <dd>{% if instagram.password_set %}Set{% else %}Not set{% endif %}</dd>
+          </div>
+          <div>
+            <dt>Saved Login</dt>
+            <dd>{% if instagram.session_saved %}{{ instagram.session_filename }}{% else %}None{% endif %}</dd>
+          </div>
+          <div>
+            <dt>Browser</dt>
+            <dd>{{ instagram.browser_mode }}</dd>
+          </div>
+        </dl>
+
+        <form method="post" action="{% url 'scheduler_app:check_instagram' %}">
+          {% csrf_token %}
+          <button type="submit" class="button primary full" {% if not instagram.configured %}disabled{% endif %}>
+            Check Instagram Login
+          </button>
+        </form>
+      </section>
+
+      <section class="panel status-panel">
+        <div class="panel-heading">
+          <div>
+            <h1>Scheduler</h1>
+            <p>Publishing worker</p>
+          </div>
+          <span class="status {% if scheduler.running %}published{% else %}cancelled{% endif %}">
+            {% if scheduler.running %}Running{% else %}Stopped{% endif %}
+          </span>
+        </div>
+
+        <dl class="status-list compact">
+          <div>
+            <dt>Queued</dt>
+            <dd>{{ scheduler.jobs }} post{{ scheduler.jobs|pluralize }}</dd>
+          </div>
+          <div>
+            <dt>Pending</dt>
+            <dd>{{ pending_count }}</dd>
+          </div>
+          <div>
+            <dt>Failed</dt>
+            <dd>{{ failed_count }}</dd>
+          </div>
+        </dl>
+
+        <div class="button-row">
+          <form method="post" action="{% url 'scheduler_app:start_scheduler' %}">
+            {% csrf_token %}
+            <button type="submit" class="button primary">Start</button>
+          </form>
+          <form method="post" action="{% url 'scheduler_app:refresh_scheduler' %}">
+            {% csrf_token %}
+            <button type="submit" class="button">Refresh</button>
+          </form>
+          <form method="post" action="{% url 'scheduler_app:stop_scheduler' %}">
+            {% csrf_token %}
+            <button type="submit" class="button danger">Stop</button>
+          </form>
+        </div>
+      </section>
+    </aside>
+
+    <section class="workspace-stack">
+      <section class="table-wrap">
+        <div class="table-head">
+          <div>
+            <h2>Scheduled Posts</h2>
+            <p>{{ posts|length }} total</p>
+          </div>
+        </div>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Post</th>
+              <th>Publish Time</th>
+              <th>Status</th>
+              <th>Attempts</th>
+              <th>Caption</th>
+              <th>Media</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for post in posts %}
+              <tr>
+                <td data-label="Post">
+                  <strong>#{{ post.id }}</strong>
+                  <span class="subtext">{{ post.get_media_type_display }}</span>
+                </td>
+                <td data-label="Publish Time">{{ post.scheduled_time|date:"Y-m-d H:i" }}</td>
+                <td data-label="Status"><span class="status {{ post.status }}">{{ post.get_status_display }}</span></td>
+                <td data-label="Attempts">{{ post.retry_count }}/{{ post.max_retries }}</td>
+                <td data-label="Caption" class="caption-cell">
+                  <span>{{ post.caption|default:"No caption" }}</span>
+                  {% if post.last_error %}
+                    <small>{{ post.last_error }}</small>
+                  {% endif %}
+                </td>
+                <td data-label="Media" class="media-cell" title="{{ post.media_path }}">{{ post.media_filename }}</td>
+                <td data-label="Actions" class="actions">
+                  {% if post.status == statuses.pending %}
+                    <a class="button small" href="{% url 'scheduler_app:edit_post' post.id %}">Edit</a>
+                    <form method="post" action="{% url 'scheduler_app:cancel_post' post.id %}">
+                      {% csrf_token %}
+                      <button type="submit" class="button small">Cancel</button>
+                    </form>
+                  {% endif %}
+
+                  {% if post.status == statuses.failed or post.status == statuses.cancelled %}
+                    <form method="post" action="{% url 'scheduler_app:retry_post' post.id %}" class="retry-form">
+                      {% csrf_token %}
+                      <input type="datetime-local" name="scheduled_time" aria-label="Retry publish time">
+                      <button type="submit" class="button small primary">Retry</button>
+                    </form>
+                  {% endif %}
+
+                  <form method="post" action="{% url 'scheduler_app:delete_post' post.id %}" onsubmit="return confirm('Delete this post?');">
+                    {% csrf_token %}
+                    <button type="submit" class="button small danger">Delete</button>
+                  </form>
+                </td>
+              </tr>
+            {% empty %}
+              <tr>
+                <td colspan="7" class="empty">No scheduled posts.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </section>
+
+      <section class="panel log-panel">
+        <div class="panel-heading">
+          <div>
+            <h2>Recent Logs</h2>
+            <p>Latest system output</p>
+          </div>
+        </div>
+        <pre>{% for line in logs %}{{ line }}
+{% empty %}No logs yet.
+{% endfor %}</pre>
+      </section>
+    </section>
+  </section>
+{% endblock %}

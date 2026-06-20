@@ -10,7 +10,7 @@ from config import (
     MEDIA_DIR,
     TIMEZONE,
 )
-from models import (
+from constants import (
     ALLOWED_IMAGE_EXTENSIONS,
     ALLOWED_VIDEO_EXTENSIONS,
     MEDIA_TYPE_IMAGE,
